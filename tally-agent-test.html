@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Tally XML Test</title>
+</head>
+<body>
+  <h2>Send XML to Tally (http://localhost:9000)</h2>
+
+  <textarea id="xmlInput" rows="30" cols="120">
+<ENVELOPE>
+  <HEADER>
+    <TALLYREQUEST>Import Data</TALLYREQUEST>
+  </HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>All Masters</REPORTNAME>
+        <STATICVARIABLES>
+          <SVCURRENTCOMPANY>IHPL</SVCURRENTCOMPANY>
+        </STATICVARIABLES>
+      </REQUESTDESC>
+      <REQUESTDATA>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="Auro" RESERVEDNAME="Auro">
+            <NAME>Auro</NAME>
+            <GUID>374</GUID>
+            <CURRENCYNAME>INR</CURRENCYNAME>
+            <EMAIL>rabi.yajav@ph.com</EMAIL>
+            <PARENT>Sundry Creditors</PARENT>
+            <LEDGERPHONE>64646464</LEDGERPHONE>
+            <LEDGERCONTACT>Ravi</LEDGERCONTACT>
+            <COUNTRYNAME>India</COUNTRYNAME>
+            <ISBILLWISEON>No</ISBILLWISEON>
+            <ISCOSTCENTRESON>No</ISCOSTCENTRESON>
+            <ISINTERESTON>No</ISINTERESTON>
+            <AFFECTSSTOCK>No</AFFECTSSTOCK>
+            <ISPARTYMAINTAINED>Yes</ISPARTYMAINTAINED>
+            <ISMULTIMAILINGDETAILS>Yes</ISMULTIMAILINGDETAILS>
+            <MAILINGNAME>Auro</MAILINGNAME>
+            <ADDRESS.LIST TYPE="String">
+              <ADDRESS>Unit VII, SEZ Unit, Plot No.S1</ADDRESS>
+              <ADDRESS>TSIIC Green Industrial Park, Telangana</ADDRESS>
+              <ADDRESS>India</ADDRESS>
+            </ADDRESS.LIST>
+            <!-- Include LEDMAILINGDETAILS, LEDGSTREGDETAILS, LEDMULTIADDRESSLIST as needed -->
+          </LEDGER>
+        </TALLYMESSAGE>
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>
+  </textarea>
+  <br>
+  <button onclick="sendToTally()">Send to Tally</button>
+
+  <h3>Response:</h3>
+  <pre id="response">Waiting...</pre>
+
+  <script>
+    async function sendToTally() {
+      const xml = document.getElementById("xmlInput").value.trim();
+      const resDiv = document.getElementById("response");
+
+      try {
+        resDiv.textContent = "Sending...";
+
+        const response = await fetch("http://127.0.0.1:9000/", {
+          method: "POST",
+          body: xml
+        });
+
+        const text = await response.text();
+
+        // Try to extract <RESPONSE> tag if present
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(text, "application/xml");
+        const responseTag = xmlDoc.getElementsByTagName("RESPONSE")[0];
+
+        if (responseTag) {
+          resDiv.textContent = `✅ Tally Response:\n\n${responseTag.textContent}`;
+        } else {
+          resDiv.textContent = `⚠️ Full XML Response:\n\n${text}`;
+        }
+
+      } catch (err) {
+        resDiv.textContent = "❌ Error: " + err.message +
+          "\n\n📌 Tip: This file must be served via HTTP, not opened directly.\nRun: python -m http.server";
+      }
+    }
+  </script>
+</body>
+</html>
